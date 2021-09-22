@@ -22,7 +22,7 @@
 /*** USER DEFINES:    ***/
 #define FAILURE_HANDLING
 //#define SERIAL_DEBUG
-//#define MINIMAL
+#define MINIMAL
 //#define SPI_UART    // Requires library from https://github.com/TMRh20/Sketches/tree/master/SPI_UART
 //#define SOFTSPI     // Requires library from https://github.com/greiman/DigitalIO
 
@@ -52,7 +52,24 @@
     // The configure script detects device and copies the correct includes.h file to /utility/includes.h
     // This behavior can be overridden by calling configure with respective parameters
     // The includes.h file defines either RF24_RPi, MRAA, LITTLEWIRE or RF24_SPIDEV and includes the correct RF24_arch_config.h file
-    #include "utility/includes.h"
+  //  #include "utility/includes.h"
+	#include <stdint.h>
+	#include <stdio.h>
+	#include <string.h>
+	#define IF_SERIAL_DEBUG(x)
+	typedef uint16_t prog_uint16_t;
+	#define PSTR(x) (x)
+	#define printf_P printf
+	#define strlen_P strlen
+	#define PROGMEM
+	#define pgm_read_word(p) (*(p))
+	#define pgm_read_byte(p) (*(p))
+	#define PRIPSTR "%s"
+	#define LOW 0
+	#define HIGH 1
+	#define max(a,b) (a>b?a:b)
+	#define min(a,b) (a<b?a:b)
+	#define _BV(x) (1<<(x))
 
 //ATTiny
 #elif defined (__AVR_ATtiny25__) || defined (__AVR_ATtiny45__) || defined (__AVR_ATtiny85__) || defined (__AVR_ATtiny24__) || defined (__AVR_ATtiny44__) || defined (__AVR_ATtiny84__) || defined (__AVR_ATtiny2313__) || defined (__AVR_ATtiny4313__) || defined (__AVR_ATtiny861__) || defined (__AVR_ATtinyX5__) || defined (__AVR_ATtinyX4__) || defined (__AVR_ATtinyX313__) || defined (__AVR_ATtinyX61__)

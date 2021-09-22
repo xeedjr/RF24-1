@@ -16,6 +16,7 @@
 #define __RF24_H__
 
 #include "RF24_config.h"
+#include "RF24HAL.h"
 
 #if defined (RF24_LINUX) || defined (LITTLEWIRE)
     #include "utility/includes.h"
@@ -110,6 +111,24 @@ typedef enum {
 
 class RF24 {
 private:
+	  RF24HAL* _rf24_hal;
+	  uint32_t millis() { return _rf24_hal->millis(); };
+	  void delay(uint16_t ms) { _rf24_hal->delay(ms); };
+	  void delayMicroseconds(uint16_t us) { _rf24_hal->delayMicroseconds(us); };
+	  class SPIT {
+		  RF24HAL* _rf24_hal;
+	  public:
+		  SPIT(RF24HAL* rf24_hal) {
+			  _rf24_hal = rf24_hal;
+		  };
+		  uint8_t transfer(uint8_t tx) {
+			  return _rf24_hal->spi_transfer(tx);
+		  }
+		  void begin() {
+			  _rf24_hal->hal_init();
+		  };
+	  } SPI;
+
     #ifdef SOFTSPI
     SoftSPI<SOFT_SPI_MISO_PIN, SOFT_SPI_MOSI_PIN, SOFT_SPI_SCK_PIN, SPI_MODE> spi;
     #elif defined (SPI_UART)
@@ -182,6 +201,8 @@ public:
      * - For Linux: The old way of setting SPI speeds using BCM2835 driver enums has been removed as of v1.3.7
      */
     RF24(uint16_t _cepin, uint16_t _cspin, uint32_t _spi_speed = RF24_SPI_SPEED);
+
+    RF24(RF24HAL* rf24_hal);
 
     /**
      * A constructor for initializing the radio's hardware dynamically

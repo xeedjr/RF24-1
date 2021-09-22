@@ -15,6 +15,8 @@
 
 void RF24::csn(bool mode)
 {
+	 _rf24_hal->csn(mode);
+
     #if defined(RF24_TINY)
     if (ce_pin != csn_pin) {
         digitalWrite(csn_pin, mode);
@@ -63,23 +65,23 @@ void RF24::csn(bool mode)
                 #endif // F_CPU to SPI_CLOCK_DIV translation
 
             #else // !defined(RF24_SPI_PTR)
-    _SPI.setBitOrder(MSBFIRST);
-    _SPI.setDataMode(SPI_MODE0);
+    SPI.setBitOrder(MSBFIRST);
+    SPI.setDataMode(SPI_MODE0);
 
                 #if !defined(F_CPU) || F_CPU < 20000000
-    _SPI.setClockDivider(SPI_CLOCK_DIV2);
+    SPI.setClockDivider(SPI_CLOCK_DIV2);
                 #elif F_CPU < 40000000
-    _SPI.setClockDivider(SPI_CLOCK_DIV4);
+    SPI.setClockDivider(SPI_CLOCK_DIV4);
                 #elif F_CPU < 80000000
-    _SPI.setClockDivider(SPI_CLOCK_DIV8);
+    SPI.setClockDivider(SPI_CLOCK_DIV8);
                 #elif F_CPU < 160000000
-    _SPI.setClockDivider(SPI_CLOCK_DIV16);
+    SPI.setClockDivider(SPI_CLOCK_DIV16);
                 #elif F_CPU < 320000000
-    _SPI.setClockDivider(SPI_CLOCK_DIV32);
+    SPI.setClockDivider(SPI_CLOCK_DIV32);
                 #elif F_CPU < 640000000
-    _SPI.setClockDivider(SPI_CLOCK_DIV64);
+    SPI.setClockDivider(SPI_CLOCK_DIV64);
                 #elif F_CPU < 1280000000
-    _SPI.setClockDivider(SPI_CLOCK_DIV128);
+    SPI.setClockDivider(SPI_CLOCK_DIV128);
                 #else // F_CPU >= 1280000000
                     #error "Unsupported CPU frequency. Please set correct SPI divider."
                 #endif // F_CPU to SPI_CLOCK_DIV translation
@@ -88,23 +90,16 @@ void RF24::csn(bool mode)
 
     #elif defined (RF24_RPi)
     if(!mode)
-        _SPI.chipSelect(csn_pin);
+        SPI.chipSelect(csn_pin);
     #endif // defined(RF24_RPi)
 
-    #if !defined(RF24_LINUX)
-    digitalWrite(csn_pin, mode);
-    delayMicroseconds(csDelay);
-    #endif // !defined(RF24_LINUX)
 }
 
 /****************************************************************************/
 
 void RF24::ce(bool level)
 {
-    //Allow for 3-pin use on ATTiny
-    if (ce_pin != csn_pin) {
-        digitalWrite(ce_pin, level);
-    }
+	 _rf24_hal->ce(level);
 }
 
 /****************************************************************************/
@@ -115,7 +110,7 @@ inline void RF24::beginTransaction()
         #if defined (RF24_SPI_PTR)
     _spi->beginTransaction(SPISettings(spi_speed, MSBFIRST, SPI_MODE0));
         #else // !defined(RF24_SPI_PTR)
-    _SPI.beginTransaction(SPISettings(spi_speed, MSBFIRST, SPI_MODE0));
+    SPI.beginTransaction(SPISettings(spi_speed, MSBFIRST, SPI_MODE0));
         #endif // !defined(RF24_SPI_PTR)
     #endif // defined (RF24_SPI_TRANSACTIONS)
     csn(LOW);
@@ -130,7 +125,7 @@ inline void RF24::endTransaction()
         #if defined (RF24_SPI_PTR)
     _spi->endTransaction();
         #else // !defined(RF24_SPI_PTR)
-    _SPI.endTransaction();
+    SPI.endTransaction();
         #endif // !defined(RF24_SPI_PTR)
     #endif // defined (RF24_SPI_TRANSACTIONS)
 }
@@ -149,7 +144,7 @@ void RF24::read_register(uint8_t reg, uint8_t* buf, uint8_t len)
 
     while (len--){ *ptx++ = RF24_NOP; } // Dummy operation, just for reading
 
-    _SPI.transfernb((char *)spi_txbuff, (char *)spi_rxbuff, size);
+    SPI.transfernb((char *)spi_txbuff, (char *)spi_rxbuff, size);
 
     status = *prx++; // status is 1st byte of receive buffer
 
@@ -164,8 +159,8 @@ void RF24::read_register(uint8_t reg, uint8_t* buf, uint8_t len)
     while (len--) { *buf++ = _spi->transfer(0xFF); }
 
         #else // !defined(RF24_SPI_PTR)
-    status = _SPI.transfer(R_REGISTER | reg);
-    while (len--) { *buf++ = _SPI.transfer(0xFF); }
+    status = SPI.transfer(R_REGISTER | reg);
+    while (len--) { *buf++ = SPI.transfer(0xFF); }
 
         #endif // !defined(RF24_SPI_PTR)
     endTransaction();
@@ -186,7 +181,7 @@ uint8_t RF24::read_register(uint8_t reg)
     *ptx++ = (R_REGISTER | reg);
     *ptx++ = RF24_NOP ; // Dummy operation, just for reading
 
-    _SPI.transfernb((char *)spi_txbuff, (char *)spi_rxbuff, 2);
+    SPI.transfernb((char *)spi_txbuff, (char *)spi_rxbuff, 2);
     status = *prx;     // status is 1st byte of receive buffer
     result = *++prx;   // result is 2nd byte of receive buffer
 
@@ -199,8 +194,8 @@ uint8_t RF24::read_register(uint8_t reg)
     result = _spi->transfer(0xff);
 
         #else // !defined(RF24_SPI_PTR)
-    status = _SPI.transfer(R_REGISTER | reg);
-    result = _SPI.transfer(0xff);
+    status = SPI.transfer(R_REGISTER | reg);
+    result = SPI.transfer(0xff);
 
         #endif // !defined(RF24_SPI_PTR)
     endTransaction();
@@ -223,7 +218,7 @@ void RF24::write_register(uint8_t reg, const uint8_t* buf, uint8_t len)
     while (len--)
       *ptx++ = *buf++;
 
-    _SPI.transfernb((char *)spi_txbuff, (char *)spi_rxbuff, size);
+    SPI.transfernb((char *)spi_txbuff, (char *)spi_rxbuff, size);
     status = *prx; // status is 1st byte of receive buffer
     endTransaction();
     #else // !defined(RF24_LINUX)
@@ -234,8 +229,8 @@ void RF24::write_register(uint8_t reg, const uint8_t* buf, uint8_t len)
     while (len--) { _spi->transfer(*buf++); }
 
         #else // !defined(RF24_SPI_PTR)
-    status = _SPI.transfer(W_REGISTER | reg);
-    while (len--) { _SPI.transfer(*buf++); }
+    status = SPI.transfer(W_REGISTER | reg);
+    while (len--) { SPI.transfer(*buf++); }
 
         #endif // !defined(RF24_SPI_PTR)
     endTransaction();
@@ -252,12 +247,12 @@ void RF24::write_register(uint8_t reg, uint8_t value, bool is_cmd_only)
         }
         beginTransaction();
         #if defined (RF24_LINUX)
-        status = _SPI.transfer(W_REGISTER | reg);
+        status = SPI.transfer(W_REGISTER | reg);
         #else
             #if defined (RF24_SPI_PTR)
         status = _spi->transfer(W_REGISTER | reg);
             #else // !defined (RF24_SPI_PTR)
-        status = _SPI.transfer(W_REGISTER | reg);
+        status = SPI.transfer(W_REGISTER | reg);
             #endif // !defined (RF24_SPI_PTR)
         #endif // !defined(RF24_LINUX)
         endTransaction();
@@ -271,7 +266,7 @@ void RF24::write_register(uint8_t reg, uint8_t value, bool is_cmd_only)
         *ptx++ = (W_REGISTER | reg);
         *ptx = value;
 
-        _SPI.transfernb((char *)spi_txbuff, (char *)spi_rxbuff, 2);
+        SPI.transfernb((char *)spi_txbuff, (char *)spi_rxbuff, 2);
         status = *prx++; // status is 1st byte of receive buffer
         endTransaction();
         #else // !defined(RF24_LINUX)
@@ -281,8 +276,8 @@ void RF24::write_register(uint8_t reg, uint8_t value, bool is_cmd_only)
         status = _spi->transfer(W_REGISTER | reg);
         _spi->transfer(value);
             #else // !defined(RF24_SPI_PTR)
-        status = _SPI.transfer(W_REGISTER | reg);
-        _SPI.transfer(value);
+        status = SPI.transfer(W_REGISTER | reg);
+        SPI.transfer(value);
             #endif // !defined(RF24_SPI_PTR)
         endTransaction();
         #endif // !defined(RF24_LINUX)
@@ -318,7 +313,7 @@ void RF24::write_payload(const void* buf, uint8_t data_len, const uint8_t writeT
     while (data_len--) { *ptx++ =  *current++; }
     while (blank_len--) { *ptx++ =  0; }
 
-    _SPI.transfernb((char *)spi_txbuff, (char *)spi_rxbuff, size);
+    SPI.transfernb((char *)spi_txbuff, (char *)spi_rxbuff, size);
     status = *prx; // status is 1st byte of receive buffer
     endTransaction();
 
@@ -331,9 +326,9 @@ void RF24::write_payload(const void* buf, uint8_t data_len, const uint8_t writeT
     while (blank_len--) { _spi->transfer(0); }
 
         #else // !defined(RF24_SPI_PTR)
-    status = _SPI.transfer(writeType);
-    while (data_len--) { _SPI.transfer(*current++); }
-    while (blank_len--) { _SPI.transfer(0); }
+    status = SPI.transfer(writeType);
+    while (data_len--) { SPI.transfer(*current++); }
+    while (blank_len--) { SPI.transfer(0); }
 
         #endif // !defined(RF24_SPI_PTR)
     endTransaction();
@@ -371,7 +366,7 @@ void RF24::read_payload(void* buf, uint8_t data_len)
 
     size = data_len + blank_len + 1; // Size has been lost during while, re affect
 
-    _SPI.transfernb((char *)spi_txbuff, (char *)spi_rxbuff, size);
+    SPI.transfernb((char *)spi_txbuff, (char *)spi_rxbuff, size);
 
     status = *prx++; // 1st byte is status
 
@@ -391,9 +386,9 @@ void RF24::read_payload(void* buf, uint8_t data_len)
     while (blank_len--) { _spi->transfer(0xff); }
 
         #else // !defined(RF24_SPI_PTR)
-    status = _SPI.transfer(R_RX_PAYLOAD);
-    while (data_len--) { *current++ = _SPI.transfer(0xFF); }
-    while (blank_len--) { _SPI.transfer(0xff); }
+    status = SPI.transfer(R_RX_PAYLOAD);
+    while (data_len--) { *current++ = SPI.transfer(0xFF); }
+    while (blank_len--) { SPI.transfer(0xff); }
 
         #endif // !defined(RF24_SPI_PTR)
     endTransaction();
@@ -427,7 +422,6 @@ uint8_t RF24::get_status(void)
 
 /****************************************************************************/
 #if !defined(MINIMAL)
-
 void RF24::print_status(uint8_t _status)
 {
     printf_P(PSTR("STATUS\t\t= 0x%02x RX_DR=%x TX_DS=%x MAX_RT=%x RX_P_NO=%x TX_FULL=%x\r\n"), _status, (_status & _BV(RX_DR)) ? 1 : 0,
@@ -489,16 +483,25 @@ void RF24::print_address_register(const char* name, uint8_t reg, uint8_t qty)
 
 RF24::RF24(uint16_t _cepin, uint16_t _cspin, uint32_t _spi_speed)
         :ce_pin(_cepin), csn_pin(_cspin), spi_speed(_spi_speed), payload_size(32), dynamic_payloads_enabled(true), addr_width(5), _is_p_variant(false),
-         csDelay(5)
+         csDelay(5), SPI(0)
 {
     _init_obj();
 }
 
 /****************************************************************************/
 
+RF24::RF24(RF24HAL* rf24_hal)
+:payload_size(32), dynamic_payloads_enabled(true), addr_width(5), _is_p_variant(false),
+ csDelay(5), _rf24_hal(rf24_hal), SPI(rf24_hal)
+{
+	_init_obj();
+}
+
+/****************************************************************************/
+
 RF24::RF24(uint32_t _spi_speed)
         :ce_pin(0xFFFF), csn_pin(0xFFFF), spi_speed(_spi_speed), payload_size(32), dynamic_payloads_enabled(true), addr_width(5), _is_p_variant(false),
-         csDelay(5)
+         csDelay(5), SPI(0)
 {
     _init_obj();
 }
@@ -800,7 +803,7 @@ bool RF24::begin(void)
     }
         #endif // RF24_RPi
 
-    _SPI.begin(csn_pin, spi_speed);
+    SPI.begin(csn_pin, spi_speed);
 
     #elif defined (XMEGA_D3)
     _spi->begin(csn_pin);
@@ -810,7 +813,7 @@ bool RF24::begin(void)
         #if defined (RF24_SPI_PTR)
     _spi->begin();
         #else  // !defined(RF24_SPI_PTR)
-    _SPI.begin();
+    SPI.begin();
         #endif // !defined(RF24_SPI_PTR)
 
     #endif // !defined(XMEGA_D3) && !defined(RF24_LINUX)
@@ -853,11 +856,12 @@ bool RF24::_init_pins()
     #else // using an Arduino platform
 
     // Initialize pins
+#if 0
     if (ce_pin != csn_pin) {
         pinMode(ce_pin, OUTPUT);
         pinMode(csn_pin, OUTPUT);
     }
-
+#endif
     ce(LOW);
     csn(HIGH);
 
@@ -1462,8 +1466,8 @@ void RF24::toggle_features(void)
     status = _spi->transfer(ACTIVATE);
     _spi->transfer(0x73);
     #else
-    status = _SPI.transfer(ACTIVATE);
-    _SPI.transfer(0x73);
+    status = SPI.transfer(ACTIVATE);
+    SPI.transfer(0x73);
     #endif
     endTransaction();
 }
